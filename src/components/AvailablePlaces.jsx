@@ -4,35 +4,27 @@ import Places from "./Places.jsx";
 import Error from "./Error.jsx";
 import { sortPlacesByDistance } from "../loc.js";
 import { fetchAvailablePlaces } from "../http.js";
+import { useFetch } from "../hooks/useFetch.js";
+
+// 构造一个异步函数，可以处理排序逻辑，并且返回Promise
+async function fetchSortedPlaces() {
+  const places = await fetchAvailablePlaces();
+
+  return new Promise((resolve) => {
+    // 模拟获取经纬度的延迟
+    setTimeout(() => {
+      const sortedPlaces = sortPlacesByDistance(places, 30, 150);
+      return resolve(sortedPlaces);
+    }, 2000);
+  });
+}
 
 export default function AvailablePlaces({ onSelectPlace }) {
-  const [isFetching, setIsFetching] = useState(false);
-  const [availablePlaces, setAvailablePlaces] = useState([]);
-  const [error, setError] = useState();
-
-  useEffect(() => {
-    async function fetchPlaces() {
-      setIsFetching(true);
-
-      try {
-        const places = await fetchAvailablePlaces();
-        // 模拟获取经纬度的延迟
-        setTimeout(() => {
-          const sortedPlaces = sortPlacesByDistance(places, 30, 150);
-          setAvailablePlaces(sortedPlaces);
-          setIsFetching(false);
-        }, 2000);
-      } catch (error) {
-        setError({
-          message:
-            error.message || "Could not fetch places, please try again later.",
-        });
-        setIsFetching(false);
-      }
-    }
-
-    fetchPlaces();
-  }, []);
+  const {
+    isFetching,
+    fetchedData: availablePlaces,
+    error,
+  } = useFetch(fetchSortedPlaces, []);
 
   if (error) {
     return <Error title="An error occurred!" message={error.message} />;
